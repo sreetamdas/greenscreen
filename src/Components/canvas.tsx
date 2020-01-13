@@ -1,7 +1,14 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, RefObject } from "react";
+
+type TImageSnapshot = {
+	data: Uint8ClampedArray;
+	height: number;
+	width: number;
+};
 
 export const Canvas = () => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const hiddenRef = useRef<HTMLCanvasElement>(null);
 	const videoRef = useRef<HTMLVideoElement>(null);
 
 	const constraints = { audio: false, video: { width: 480, height: 360 } };
@@ -10,7 +17,7 @@ export const Canvas = () => {
 		video: HTMLVideoElement,
 		canvas: CanvasRenderingContext2D
 	) => {
-		console.log({ video }, { canvas });
+		// console.log({ video }, { canvas });
 
 		canvas.drawImage(video, 0, 0);
 		setTimeout(() => {
@@ -19,7 +26,9 @@ export const Canvas = () => {
 	};
 
 	useEffect(() => {
-		const canvas = canvasRef.current?.getContext("2d");
+		const canvas = canvasRef.current?.getContext(
+			"2d"
+		) as CanvasRenderingContext2D;
 		const video = videoRef.current as HTMLVideoElement;
 		// if (canvas !== null && canvas.getContext) {
 
@@ -29,6 +38,7 @@ export const Canvas = () => {
 
 		/* 
 			0, 0, width and height?
+
 			*/
 		// canvasContext.fillRect(0, 0, 470, 350);
 		// }
@@ -45,6 +55,7 @@ export const Canvas = () => {
 						console.log("loaded");
 
 						rapidRefresh(video, canvas);
+						processImage(video, canvas, canvasRef);
 					}); // can also use "loadeddata"
 					// canvasContext?.drawImage(video, 0, 0); // only a single snapshot
 				};
@@ -54,6 +65,36 @@ export const Canvas = () => {
 			});
 		// }
 	}, []);
+
+	const processImage = (
+		video: HTMLVideoElement,
+		canvas: CanvasRenderingContext2D,
+		canvasRef: RefObject<HTMLCanvasElement>
+	) => {
+		const snapshot: TImageSnapshot = canvas.getImageData(
+			0,
+			0,
+			(canvasRef.current as HTMLCanvasElement).width,
+			(canvasRef.current as HTMLCanvasElement).height
+		);
+
+		console.log({ snapshot });
+
+		/* 
+		format of snapshot's data:Uint8ClampedArray =>
+
+		0: RBG's Red value
+		1: RGB's Green value
+		2: RGB's Blue value
+		3: Another 8-bit value
+
+		*/
+
+		const numberOfPixels = snapshot.data.length / 4;
+		console.log({ numberOfPixels });
+
+		// Now the processing
+	};
 
 	return (
 		<React.Fragment>
@@ -67,6 +108,9 @@ export const Canvas = () => {
 						transform: "scaleX(-1)",
 					}}
 				></canvas>
+				<div style={{ display: "none" }}>
+					<canvas ref={hiddenRef}></canvas>
+				</div>
 				<video
 					ref={videoRef}
 					style={{
