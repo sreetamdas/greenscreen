@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useRef, useEffect, RefObject } from "react";
 
 type TImageSnapshot = {
@@ -20,6 +21,8 @@ export const Canvas = () => {
 		// console.log({ video }, { canvas });
 
 		canvas.drawImage(video, 0, 0);
+		processImage(video, canvas, canvasRef);
+
 		setTimeout(() => {
 			rapidRefresh(video, canvas);
 		}, 0); // rapidly refresh :P
@@ -55,7 +58,6 @@ export const Canvas = () => {
 						console.log("loaded");
 
 						rapidRefresh(video, canvas);
-						processImage(video, canvas, canvasRef);
 					}); // can also use "loadeddata"
 					// canvasContext?.drawImage(video, 0, 0); // only a single snapshot
 				};
@@ -67,7 +69,7 @@ export const Canvas = () => {
 	}, []);
 
 	const processImage = (
-		video: HTMLVideoElement,
+		_video: HTMLVideoElement,
 		canvas: CanvasRenderingContext2D,
 		canvasRef: RefObject<HTMLCanvasElement>
 	) => {
@@ -78,7 +80,7 @@ export const Canvas = () => {
 			(canvasRef.current as HTMLCanvasElement).height
 		);
 
-		console.log({ snapshot });
+		// console.log({ snapshot });
 
 		/* 
 		format of snapshot's data:Uint8ClampedArray =>
@@ -91,9 +93,32 @@ export const Canvas = () => {
 		*/
 
 		const numberOfPixels = snapshot.data.length / 4;
-		console.log({ numberOfPixels });
+		// console.log({ numberOfPixels }); // 172800 // 480 * 320
 
 		// Now the processing
+		for (let i = 0; i < numberOfPixels; i++) {
+			// const [r, g, b] = [
+			// 	...Array.from(
+			// 		[i].map(
+			// 			(el, index) => snapshot.data[el + index + (index % 4)]
+			// 		)
+			// 	),
+			// ];
+			const r = snapshot.data[i * 4];
+			const g = snapshot.data[i * 4 + 1];
+			const b = snapshot.data[i * 4 + 2];
+			// const alpha = snapshot.data[i * 4 + 3];
+
+			// console.log("=>", r, g, b);
+
+			// if green has higher concentration // and isnt dark
+			if (r > b && r > g && r > 100) {
+				snapshot.data[i * 4 + 3] = 0;
+				// console.log("Bright Green at i =", i);
+			}
+		}
+		canvas.putImageData(snapshot, 0, 0);
+		return;
 	};
 
 	return (
